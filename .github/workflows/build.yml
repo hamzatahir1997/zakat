@@ -1,5 +1,11 @@
 # Builds the Zakat Tracker APK automatically and uploads it as a downloadable artifact.
 # You do not need to understand this file. GitHub runs it every time the code is pushed.
+#
+# Design notes (July 2025+):
+# - No third-party SDK-setup action: it has flaked on GitHub runners before.
+# - Instead, this uses the Android SDK that GitHub runners usually ship (if present)
+#   or downloads the official Android command line tools from dl.google.com itself.
+
 name: Build Zakat Tracker APK
 
 on:
@@ -20,12 +26,25 @@ jobs:
           java-version: '17'
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install required SDK packages
         run: |
-          yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          if [ -d /usr/local/lib/android/sdk ]; then
+            SDK_DIR="/usr/local/lib/android/sdk"
+          else
+            SDK_DIR="$HOME/android-sdk"
+          fi
+          echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
+          SMA="$SDK_DIR/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SMA" ]; then
+            echo "Command line tools not found - downloading them"
+            mkdir -p "$SDK_DIR/cmdline-tools"
+            curl -fsSL "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" -o /tmp/cmdtools.zip
+            unzip -q /tmp/cmdtools.zip -d "$SDK_DIR/cmdline-tools"
+            mkdir -p "$SDK_DIR/cmdline-tools/latest"
+            mv "$SDK_DIR/cmdline-tools/cmdline-tools"/* "$SDK_DIR/cmdline-tools/latest/"
+          fi
+          "$SMA" --version
+          yes | "$SMA" --licenses > /dev/null || true
+          "$SMA" --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
