@@ -23,6 +23,9 @@ repository, and GitHub Actions builds the APK in the cloud. You download
 `app-debug.apk` from the run's "Artifacts" box and install it on your phone. About
 20–30 minutes of mostly waiting.
 
+Want to see it running on your computer first (no APK)? See
+[RUN-LOCALLY-GUIDE.md](RUN-LOCALLY-GUIDE.md).
+
 ---
 
 ## How to use the app
